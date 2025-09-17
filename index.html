@@ -428,13 +428,10 @@ document.getElementById("downloadCsvQuick").addEventListener("click", ()=>{
 const SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbwOvctrHvyjwJB0Nit4tW5OUyJKvDMAISS_WpmV_PPto47T-5swiXyYWqBEq-NXcYJH/exec";
 
 async function postToSheets(row) {
-  if(!SHEETS_ENDPOINT || SHEETS_ENDPOINT === "https://script.google.com/macros/s/AKfycbwOvctrHvyjwJB0Nit4tW5OUyJKvDMAISS_WpmV_PPto47T-5swiXyYWqBEq-NXcYJH/exec"){
-    return { ok:false, error:"Sheets endpoint not configured" };
-  }
   try {
     const res = await fetch(SHEETS_ENDPOINT, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // 👈 changed
       body: JSON.stringify(row)
     });
     const data = await res.json().catch(()=>({ ok:false, error:"Bad JSON from server" }));
@@ -443,6 +440,7 @@ async function postToSheets(row) {
     return { ok:false, error:String(e) };
   }
 }
+
 
 /* ============== Submit Handler ============== */
 document.getElementById("submitBtn").addEventListener("click", async ()=>{
