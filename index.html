@@ -32,6 +32,20 @@
   .modal .muted { color:var(--muted); font-size:12px; }
   .admin-note { font-size:12px; color:var(--muted); }
 </style>
+
+<!-- Cache buster: bump APP_VERSION whenever you update the file -->
+<script>
+  const APP_VERSION = "2025-09-17-v1";
+  try {
+    const KEY = "ILLUME_APP_VERSION";
+    if (localStorage.getItem(KEY) !== APP_VERSION) {
+      localStorage.setItem(KEY, APP_VERSION);
+      const u = new URL(location.href);
+      u.searchParams.set("v", APP_VERSION);
+      if (location.search !== u.search) location.replace(u.toString());
+    }
+  } catch (_) {}
+</script>
 </head>
 <body>
 <div class="wrap">
@@ -42,7 +56,6 @@
 
   <div class="card">
     <div class="row">
-      <!-- Optional identity fields -->
       <div class="row">
         <div>
           <label>First name</label>
@@ -77,7 +90,6 @@
       <div class="actions">
         <button id="submitBtn">Submit Response</button>
 
-        <!-- Admin controls hidden by default -->
         <span id="adminControls" class="hide" style="display:flex; gap:10px; flex-wrap:wrap;">
           <button class="secondary" id="exportCsvBtn">Export CSV</button>
           <button class="secondary" id="exportJsonBtn">Export JSON</button>
@@ -92,7 +104,6 @@
   </div>
 </div>
 
-<!-- Confirmation Modal -->
 <div id="backdrop" class="modal-backdrop">
   <div class="modal">
     <h2>Thanks, your response has been submitted</h2>
@@ -146,65 +157,63 @@ document.addEventListener("DOMContentLoaded", ()=>{
 /* ============== Schema ============== */
 const schema = {
   "Magazine Subscriber": [
-    { key:"mag_sat",       label:"On a scale of 1-5, how satisfied are you with Illume Magazine?", type:"scale5" },
-    { key:"mag_enjoy",     label:"What do you enjoy most about the magazine?", type:"checkbox",
+    { key:"mag_sat", label:"On a scale of 1-5, how satisfied are you with Illume Magazine?", type:"scale5" },
+    { key:"mag_enjoy", label:"What do you enjoy most about the magazine?", type:"checkbox",
       options:["Historical pieces","Business tips","Artisan spotlights","Industry news","Skill demonstrations","Supplier connections"], other:true },
-    { key:"mag_format",    label:"Do you prefer reading the magazine in the print or digital format?", type:"single",
+    { key:"mag_format", label:"Do you prefer reading the magazine in the print or digital format?", type:"single",
       options:["Print","Digital","Both"] },
-    { key:"mag_reco",      label:"How likely are you to recommend Illume to a fellow leatherworker?", type:"single",
+    { key:"mag_reco", label:"How likely are you to recommend Illume to a fellow leatherworker?", type:"single",
       options:["Not likely","Likely","Highly likely","Definitely"] }
   ],
   "Magazine Advertiser": [
-    { key:"adv_sat",       label:"How satisfied are you with your advertising experience with Illume?", type:"scale5" },
-    { key:"adv_lift",      label:"Have you noticed an increase in customer inquiries or sales from your ad?", type:"yesno" },
-    { key:"adv_again",     label:"How likely are you to advertise with us again?", type:"single",
+    { key:"adv_sat", label:"How satisfied are you with your advertising experience with Illume?", type:"scale5" },
+    { key:"adv_lift", label:"Have you noticed an increase in customer inquiries or sales from your ad?", type:"yesno" },
+    { key:"adv_again", label:"How likely are you to advertise with us again?", type:"single",
       options:["Not likely","Likely","Highly likely","Definitely"] },
-    { key:"adv_improve",   label:"What could we improve to make advertising with Illume more valuable to you?", type:"text" }
+    { key:"adv_improve", label:"What could we improve to make advertising with Illume more valuable to you?", type:"text" }
   ],
   "Learn Subscriber": [
-    { key:"learn_sat",     label:"How satisfied are you with your Learn with Illume experience?", type:"scale5" },
+    { key:"learn_sat", label:"How satisfied are you with your Learn with Illume experience?", type:"scale5" },
     { key:"learn_chooser", label:"What determines your course selection most of the time?", type:"single",
       options:["Skill level","Project type","Instructor"], other:true },
-    { key:"learn_freq",    label:"How often are you in the platform?", type:"single",
+    { key:"learn_freq", label:"How often are you in the platform?", type:"single",
       options:["Daily","Weekly","Monthly","Rarely"] },
-    { key:"learn_renew",   label:"How likely are you to continue your subscription next month?", type:"single",
+    { key:"learn_renew", label:"How likely are you to continue your subscription next month?", type:"single",
       options:["Not likely","Likely","Highly likely","Definitely"] },
-    { key:"learn_better",  label:"What is one thing that could improve your learning experience on Illume?", type:"text" }
+    { key:"learn_better", label:"What is one thing that could improve your learning experience on Illume?", type:"text" }
   ],
   "Learn Instructor": [
-    { key:"teach_sat",     label:"How satisfied are you with your experience as an instructor on Learn with Illume?", type:"scale5" },
+    { key:"teach_sat", label:"How satisfied are you with your experience as an instructor on Learn with Illume?", type:"scale5" },
     { key:"teach_process", label:"How is the process of outlining and filming courses with the Illume team?", type:"scale5" },
-    { key:"teach_engage",  label:"Have you seen engagement from students in your courses?", type:"yesno" },
-    { key:"teach_reco",    label:"Would you recommend teaching on Learn with Illume to other leather professionals?", type:"single",
+    { key:"teach_engage", label:"Have you seen engagement from students in your courses?", type:"yesno" },
+    { key:"teach_reco", label:"Would you recommend teaching on Learn with Illume to other leather professionals?", type:"single",
       options:["Yes","No"] },
-    { key:"teach_why_no",  label:"If no, why?", type:"text", showIf:{ field:"teach_reco", equals:"No" } },
+    { key:"teach_why_no", label:"If no, why?", type:"text", showIf:{ field:"teach_reco", equals:"No" } },
     { key:"teach_support", label:"What support or resources would help you create better courses?", type:"text" }
   ],
   "Event Attendee": [
-    { key:"evt_sat",       label:"How satisfied were you with the event?", type:"scale5" },
-    { key:"evt_best",      label:"What part of the event did you enjoy the most?", type:"single",
+    { key:"evt_sat", label:"How satisfied were you with the event?", type:"scale5" },
+    { key:"evt_best", label:"What part of the event did you enjoy the most?", type:"single",
       options:["Vendor hall","Competitions","Classes","Networking","Post-show events","Event staff"], other:true },
-    { key:"evt_class",     label:"Did you attend a class?", type:"single",
-      options:["No","Yes"] },
-    { key:"evt_class_rate",label:"If yes, how would you rate it?", type:"scale5",
-      showIf:{ field:"evt_class", equals:"Yes" } },
-    { key:"evt_return",    label:"How likely are you to attend again next year?", type:"single",
+    { key:"evt_class", label:"Did you attend a class?", type:"single", options:["No","Yes"] },
+    { key:"evt_class_rate", label:"If yes, how would you rate it?", type:"scale5", showIf:{ field:"evt_class", equals:"Yes" } },
+    { key:"evt_return", label:"How likely are you to attend again next year?", type:"single",
       options:["Not likely","Likely","Highly likely","Definitely"] }
   ],
   "Event Vendor": [
-    { key:"ven_sat",       label:"How satisfied were you with your vending experience?", type:"scale5" },
-    { key:"ven_goal",      label:"Did you meet your sales expectations?", type:"yesno" },
-    { key:"ven_aud",       label:"What type of attendees were most interested in your products?", type:"checkbox",
+    { key:"ven_sat", label:"How satisfied were you with your vending experience?", type:"scale5" },
+    { key:"ven_goal", label:"Did you meet your sales expectations?", type:"yesno" },
+    { key:"ven_aud", label:"What type of attendees were most interested in your products?", type:"checkbox",
       options:["Hobbyists","Small business owners","Manufacturers"], other:true },
-    { key:"ven_again",     label:"How likely are you to return as a vendor next year?", type:"single",
+    { key:"ven_again", label:"How likely are you to return as a vendor next year?", type:"single",
       options:["Not likely","Likely","Highly likely","Definitely"] },
-    { key:"ven_improve",   label:"What would improve your experience as a vendor?", type:"text" }
+    { key:"ven_improve", label:"What would improve your experience as a vendor?", type:"text" }
   ],
   "Event Instructor": [
-    { key:"einst_sat",     label:"How satisfied were you with your teaching experience at the event?", type:"scale5" },
-    { key:"einst_eng",     label:"Did your class meet or exceed your expectations for engagement?", type:"yesno" },
-    { key:"einst_next",    label:"Would you be interested in teaching again next year?", type:"yesno" },
-    { key:"einst_reco",    label:"How likely are you to recommend teaching at our events to other leather industry professionals?", type:"scale5" }
+    { key:"einst_sat", label:"How satisfied were you with your teaching experience at the event?", type:"scale5" },
+    { key:"einst_eng", label:"Did your class meet or exceed your expectations for engagement?", type:"yesno" },
+    { key:"einst_next", label:"Would you be interested in teaching again next year?", type:"yesno" },
+    { key:"einst_reco", label:"How likely are you to recommend teaching at our events to other leather industry professionals?", type:"scale5" }
   ]
 };
 
@@ -269,9 +278,9 @@ function renderField(def){
   let control;
   if(def.type === "scale5") control = makeScale5();
   else if(def.type === "single") {
-    control = makeSelect([...(def.options||[]), ...(def.other?["Other"]:[])]); 
+    control = makeSelect([...(def.options||[]), ...(def.other?["Other"]:[])]);
     if(def.other){
-      const otherBox = document.createElement("input"); 
+      const otherBox = document.createElement("input");
       otherBox.type="text"; otherBox.className="inline-input hide"; otherBox.maxLength=100; otherBox.placeholder="Other (max 100 chars)";
       control.addEventListener("change", ()=>{
         if(control.value === "Other") otherBox.classList.remove("hide");
@@ -382,7 +391,7 @@ function toCSV(rows){
   const cols = Array.from(rows.reduce((set,row)=>{ Object.keys(row).forEach(k=>set.add(k)); return set; }, new Set()));
   const esc = v => {
     const s = String(v==null ? "" : v);
-    if(/[\",\\n]/.test(s)) return '"' + s.replace(/"/g,'""') + '"';
+    if(/[\",\n]/.test(s)) return '"' + s.replace(/"/g,'""') + '"';
     return s;
   };
   const header = cols.map(esc).join(",");
@@ -424,23 +433,30 @@ document.getElementById("downloadCsvQuick").addEventListener("click", ()=>{
 });
 
 /* ============== Google Sheets Hook ============== */
-// Replace with your Apps Script Web App URL (must be https, ends with /exec)
 const SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxf1JGJVQpDMKkTEFpO4f8ecjuiMs2pKYRAiFrbzquZP2MGIa6yB3_q9iiIXaxnG88D/exec";
 
 async function postToSheets(row) {
   try {
+    const ctrl = new AbortController();
+    const to = setTimeout(() => ctrl.abort(), 12000);
+
     const res = await fetch(SHEETS_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // 👈 changed
-      body: JSON.stringify(row)
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(row),
+      signal: ctrl.signal
     });
-    const data = await res.json().catch(()=>({ ok:false, error:"Bad JSON from server" }));
-    return data;
+    clearTimeout(to);
+
+    if (!res.ok) return { ok:false, error:`HTTP ${res.status} ${res.statusText}` };
+
+    const data = await res.json();
+    return data && typeof data === "object" ? data : { ok:false, error:"Non-JSON response" };
   } catch (e) {
-    return { ok:false, error:String(e) };
+    const msg = (e && e.name === "AbortError") ? "Request timed out" : String(e.message || e);
+    return { ok:false, error: msg };
   }
 }
-
 
 /* ============== Submit Handler ============== */
 document.getElementById("submitBtn").addEventListener("click", async ()=>{
@@ -453,8 +469,8 @@ document.getElementById("submitBtn").addEventListener("click", async ()=>{
 
   const who = [row.first_name, row.last_name].filter(Boolean).join(" ");
   const statusLine = result.ok ? "Saved to Sheets" : "Saved locally only";
-  const extra = result.ok 
-    ? `<br><strong>Sheets time:</strong> ${result.stored_at || ""}` 
+  const extra = result.ok
+    ? `<br><strong>Sheets time:</strong> ${result.stored_at || ""}`
     : `<br><strong>Warning:</strong> ${result.error || "Offline or blocked"}`;
 
   const summary = `<p><strong>Submitted</strong> at ${new Date(row._ts).toLocaleString()}`
