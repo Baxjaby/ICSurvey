@@ -35,7 +35,7 @@
 
 <!-- Cache buster: bump APP_VERSION whenever you update the file -->
 <script>
-  const APP_VERSION = "2025-09-17-v1";
+  const APP_VERSION = "2025-09-18-v2";
   try {
     const KEY = "ILLUME_APP_VERSION";
     if (localStorage.getItem(KEY) !== APP_VERSION) {
@@ -434,29 +434,53 @@ document.getElementById("downloadCsvQuick").addEventListener("click", ()=>{
 
 /* ============== Google Sheets Hook ============== */
 const SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxf1JGJVQpDMKkTEFpO4f8ecjuiMs2pKYRAiFrbzquZP2MGIa6yB3_q9iiIXaxnG88D/exec";
+  // Warm up Apps Script once the page loads (ignores errors)
+window.addEventListener("load", () => {
+  fetch(SHEETS_ENDPOINT + "?v=" + Date.now(), { method: "GET", cache: "no-store" }).catch(()=>{});
+});
+
 
 async function postToSheets(row) {
+  // add a cache-buster each call
+  const url = SHEETS_ENDPOINT + "?v=" + Date.now();
+
+  // timeout guard
+  const ctrl = new AbortController();
+  const to = setTimeout(() => ctrl.abort(), 12000); // 12s
+
+  const opts = {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" }, // keeps it a simple POST in Sites
+    body: JSON.stringify(row),
+    cache: "no-store",
+    signal: ctrl.signal
+  };
+
+  async function tryOnce() {
+    const res = await fetch(url, opts);
+    if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+    return res.json();
+  }
+
   try {
-    const ctrl = new AbortController();
-    const to = setTimeout(() => ctrl.abort(), 12000);
-
-    const res = await fetch(SHEETS_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(row),
-      signal: ctrl.signal
-    });
+    const data = await tryOnce();
     clearTimeout(to);
-
-    if (!res.ok) return { ok:false, error:`HTTP ${res.status} ${res.statusText}` };
-
-    const data = await res.json();
-    return data && typeof data === "object" ? data : { ok:false, error:"Non-JSON response" };
+    return typeof data === "object" ? data : { ok:false, error:"Non-JSON response" };
   } catch (e) {
-    const msg = (e && e.name === "AbortError") ? "Request timed out" : String(e.message || e);
-    return { ok:false, error: msg };
+    // brief backoff, then one retry
+    await new Promise(r => setTimeout(r, 600));
+    try {
+      const data = await tryOnce();
+      clearTimeout(to);
+      return data;
+    } catch (e2) {
+      clearTimeout(to);
+      const msg = e2 && e2.name === "AbortError" ? "Request timed out" : String(e2 && e2.message || e2);
+      return { ok:false, error: msg };
+    }
   }
 }
+
 
 /* ============== Submit Handler ============== */
 document.getElementById("submitBtn").addEventListener("click", async ()=>{
