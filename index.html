@@ -241,10 +241,7 @@ const schema = {
     { key:"einst_reco", label:"How likely are you to recommend teaching at our events to other leather industry professionals?", type:"scale5" }
   ]
 };
-// --- Role normalization helpers ---
-const ROLE_MAP = Object.keys(schema).reduce((m,k)=>{ m[k.toLowerCase()] = k; return m; }, {});
-const normalizeRole = (v) => ROLE_MAP[(v || "").trim().toLowerCase()] || "";
-    // ---- One submission lock (14 days) ----
+ // ---- One submission lock (14 days) ----
 const SUBMIT_LOCK_KEY = "illume:submission_lock";
 const SUBMIT_LOCK_MS  = 14 * 24 * 60 * 60 * 1000; // 14 days
 
@@ -299,6 +296,10 @@ function updateLockUI() {
 
 // run once on load
 document.addEventListener("DOMContentLoaded", updateLockUI);
+
+// --- Role normalization helpers ---
+const ROLE_MAP = Object.keys(schema).reduce((m,k)=>{ m[k.toLowerCase()] = k; return m; }, {});
+const normalizeRole = (v) => ROLE_MAP[(v || "").trim().toLowerCase()] || "";
 
 /* ============== State ============== */
 const STORAGE_KEY = "illume_feedback_responses_v5";
