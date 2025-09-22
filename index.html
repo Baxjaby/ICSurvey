@@ -177,6 +177,17 @@ document.addEventListener("DOMContentLoaded", ()=>{
     });
   }
 });
+    document.addEventListener("DOMContentLoaded", () => {
+  const resetBtn = document.getElementById("resetLockBtn");
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => {
+      if (!confirm("Reset the 14-day submission lock on this browser?")) return;
+      clearLock();        // removes the localStorage lock
+      updateLockUI();     // re-enables the form and hides the notice
+      alert("Lock cleared");
+    });
+  }
+});
 
 /* ============== Schema ============== */
 const schema = {
