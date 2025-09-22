@@ -76,7 +76,6 @@
   </header>
   <div id="lockNotice" class="subtle hide" style="text-align:center; margin:4px 0 10px;"></div>
 
-
   <div class="wrap">
     <div class="card">
       <div class="row">
@@ -241,7 +240,8 @@ const schema = {
     { key:"einst_reco", label:"How likely are you to recommend teaching at our events to other leather industry professionals?", type:"scale5" }
   ]
 };
- // ---- One submission lock (14 days) ----
+    
+// ---- One submission lock (14 days) ----
 const SUBMIT_LOCK_KEY = "illume:submission_lock";
 const SUBMIT_LOCK_MS  = 14 * 24 * 60 * 60 * 1000; // 14 days
 
@@ -251,51 +251,38 @@ function readLock() {
 }
 function isLocked() {
   const info = readLock();
-  return info && typeof info.at === "number" && (Date.now() - info.at) < SUBMIT_LOCK_MS;
+  return !!(info && typeof info.at === "number" && (Date.now() - info.at) < SUBMIT_LOCK_MS);
 }
 function lockUntilTs() {
   const info = readLock();
-  return info ? info.at + SUBMIT_LOCK_MS : null;
+  return info ? (info.at + SUBMIT_LOCK_MS) : null;
 }
-function setLockNow() {
-  localStorage.setItem(SUBMIT_LOCK_KEY, JSON.stringify({ at: Date.now() }));
-}
-function clearLock() {
-  localStorage.removeItem(SUBMIT_LOCK_KEY);
-}
+function setLockNow() { localStorage.setItem(SUBMIT_LOCK_KEY, JSON.stringify({ at: Date.now() })); }
+function clearLock()   { localStorage.removeItem(SUBMIT_LOCK_KEY); }
 
 function setFormDisabled(disabled) {
-  document.querySelectorAll('input, select, textarea, button')
-    .forEach(el => {
-      // keep admin controls clickable
-      if (el.closest('#adminControls')) return;
-      el.disabled = disabled;
-    });
+  // limit to the survey form area so admin buttons still work
+  document.querySelectorAll('.wrap .card input, .wrap .card select, .wrap .card textarea, .wrap .card button#submitBtn')
+    .forEach(el => el.disabled = disabled);
 }
 
-function formatUntil(ts) {
-  try {
-    const d = new Date(ts);
-    return d.toLocaleString();
-  } catch { return ""; }
-}
+function formatUntil(ts) { try { return new Date(ts).toLocaleString(); } catch { return ""; } }
 
 function updateLockUI() {
   const notice = document.getElementById("lockNotice");
-  if (!notice) return;
   if (isLocked()) {
-    const until = formatUntil(lockUntilTs());
-    notice.textContent = `You already submitted. You can submit again on ${until}.`;
-    notice.classList.remove("hide");
+    notice && (
+      notice.textContent = `You already submitted. You can submit again on ${formatUntil(lockUntilTs())}.`,
+      notice.classList.remove("hide")
+    );
     setFormDisabled(true);
   } else {
-    notice.classList.add("hide");
+    notice && notice.classList.add("hide");  // <- this line was cut off
     setFormDisabled(false);
   }
 }
 
-// run once on load
-document.addEventListener("DOMContentLoaded", updateLockUI);
+  document.addEventListener("DOMContentLoaded", updateLockUI);
 
 // --- Role normalization helpers ---
 const ROLE_MAP = Object.keys(schema).reduce((m,k)=>{ m[k.toLowerCase()] = k; return m; }, {});
