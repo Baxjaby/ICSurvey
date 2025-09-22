@@ -54,7 +54,7 @@
 
   <!-- Cache buster -->
   <script>
-    const APP_VERSION = "2025-09-18-v7";
+    const APP_VERSION = "2025-09-18-v6a";
     try {
       const KEY = "ILLUME_APP_VERSION";
       if (localStorage.getItem(KEY) !== APP_VERSION) {
@@ -153,19 +153,25 @@ function setAdminMode(on){
   $("#adminControls").classList.toggle("hide", !on);
   $("#adminHint").classList.toggle("hide", !on);
 }
-document.addEventListener("keydown", (e)=>{
-  if(e.key.toLowerCase() === "a" && e.shiftKey){
+
+document.addEventListener("keydown", function (e) {
+  if (e.shiftKey && (e.key === "A" || e.key === "a")) {
     const input = prompt("Enter admin passphrase:");
-    if(input && input.trim() === ADMIN_PASSPHRASE){
-      setAdminMode(true); alert("Admin mode enabled");
-    } else if(input != null) { alert("Incorrect passphrase"); }
+    if (input && input.trim() === ADMIN_PASSPHRASE) {
+      setAdminMode(true);
+      alert("Admin mode enabled");
+    } else if (input != null) {
+      alert("Incorrect passphrase");
+    }
   }
 });
+
 (function(){
   const m = location.hash.match(/#admin=(.+)$/);
   if(m && decodeURIComponent(m[1]) === ADMIN_PASSPHRASE) setAdminMode(true);
   else setAdminMode(localStorage.getItem(ADMIN_FLAG_KEY) === "1");
 })();
+
 document.addEventListener("DOMContentLoaded", ()=>{
   $("#adminSignOut")?.addEventListener("click", ()=>{
     localStorage.removeItem(ADMIN_FLAG_KEY);
@@ -249,7 +255,8 @@ function setLockNow(){ localStorage.setItem(SUBMIT_LOCK_KEY, JSON.stringify({ at
 function clearLock(){ localStorage.removeItem(SUBMIT_LOCK_KEY); }
 
 function setFormDisabled(disabled){
-  document.querySelectorAll('.wrap .card input, .wrap .card select, .wrap .card textarea, .wrap .card button#submitBtn')
+  document
+    .querySelectorAll('.wrap .card input, .wrap .card select, .wrap .card textarea, .wrap .card button#submitBtn')
     .forEach(el => el.disabled = disabled);
 }
 function formatUntil(ts){ try{ return new Date(ts).toLocaleString(); }catch{ return ""; } }
@@ -385,7 +392,6 @@ function renderForm(){
   evaluateVisibility();
 }
 
-// hook up changes + render once
 roleSel?.addEventListener("change", renderForm);
 document.addEventListener("DOMContentLoaded", renderForm);
 
