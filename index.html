@@ -54,7 +54,7 @@
 
   <!-- Cache buster -->
   <script>
-    const APP_VERSION = "2025-09-18-v3";
+    const APP_VERSION = "2025-09-18-v4";
     try {
       const KEY = "ILLUME_APP_VERSION";
       if (localStorage.getItem(KEY) !== APP_VERSION) {
@@ -74,6 +74,8 @@
     <h1 class="page-title">Illume Feedback Survey</h1>
     <p class="subtitle">Choose your customer type to see relevant questions.</p>
   </header>
+  <div id="lockNotice" class="subtle hide" style="text-align:center; margin:4px 0 10px;"></div>
+
 
   <div class="wrap">
     <div class="card">
@@ -117,6 +119,7 @@
             <button class="secondary" id="exportJsonBtn">Export JSON</button>
             <button class="secondary" id="importJsonBtn">Import JSON</button>
             <button class="warn" id="clearBtn">Clear Stored Responses</button>
+            <button class="secondary" id="resetLockBtn">Reset 14-day lock</button>
             <button class="secondary" id="adminSignOut">Exit Admin</button>
           </span>
         </div>
@@ -130,7 +133,7 @@
     <div class="modal">
       <h2>Thanks, your response has been submitted</h2>
       <div id="confirmBody"></div>
-      <p class="muted">You can close this window or submit another entry.</p>
+      <p class="muted">Thank you! Your response has been recorded you may close this window.</p>
       <div style="display:flex; gap:8px; margin-top:10px;">
         <button id="closeModal">Close</button>
         <button class="secondary" id="downloadCsvQuick">Download CSV</button>
@@ -241,6 +244,61 @@ const schema = {
 // --- Role normalization helpers ---
 const ROLE_MAP = Object.keys(schema).reduce((m,k)=>{ m[k.toLowerCase()] = k; return m; }, {});
 const normalizeRole = (v) => ROLE_MAP[(v || "").trim().toLowerCase()] || "";
+    // ---- One submission lock (14 days) ----
+const SUBMIT_LOCK_KEY = "illume:submission_lock";
+const SUBMIT_LOCK_MS  = 14 * 24 * 60 * 60 * 1000; // 14 days
+
+function readLock() {
+  try { return JSON.parse(localStorage.getItem(SUBMIT_LOCK_KEY) || "null"); }
+  catch (_) { return null; }
+}
+function isLocked() {
+  const info = readLock();
+  return info && typeof info.at === "number" && (Date.now() - info.at) < SUBMIT_LOCK_MS;
+}
+function lockUntilTs() {
+  const info = readLock();
+  return info ? info.at + SUBMIT_LOCK_MS : null;
+}
+function setLockNow() {
+  localStorage.setItem(SUBMIT_LOCK_KEY, JSON.stringify({ at: Date.now() }));
+}
+function clearLock() {
+  localStorage.removeItem(SUBMIT_LOCK_KEY);
+}
+
+function setFormDisabled(disabled) {
+  document.querySelectorAll('input, select, textarea, button')
+    .forEach(el => {
+      // keep admin controls clickable
+      if (el.closest('#adminControls')) return;
+      el.disabled = disabled;
+    });
+}
+
+function formatUntil(ts) {
+  try {
+    const d = new Date(ts);
+    return d.toLocaleString();
+  } catch { return ""; }
+}
+
+function updateLockUI() {
+  const notice = document.getElementById("lockNotice");
+  if (!notice) return;
+  if (isLocked()) {
+    const until = formatUntil(lockUntilTs());
+    notice.textContent = `You already submitted. You can submit again on ${until}.`;
+    notice.classList.remove("hide");
+    setFormDisabled(true);
+  } else {
+    notice.classList.add("hide");
+    setFormDisabled(false);
+  }
+}
+
+// run once on load
+document.addEventListener("DOMContentLoaded", updateLockUI);
 
 /* ============== State ============== */
 const STORAGE_KEY = "illume_feedback_responses_v5";
