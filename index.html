@@ -14,7 +14,7 @@
   .brand-logo{ height:102px; width:auto; margin-bottom:6px; filter:drop-shadow(0 1px 2px rgba(0,0,0,.3)); }
   .page-title{ color:var(--gold); font-size:28px; margin:0; }
   .subtitle{ opacity:.8; font-size:.9rem; margin-top:2px; }
-  @media (max-width:600px){ .brand-logo{ height:40px; } .page-title{ font-size:24px; } }
+  @media (max-width:600px){ .brand-logo{ height:50px; } .page-title{ font-size:24px; } }
 
   /* theme + layout */
   :root { --bg:#0f1115; --card:#171a21; --ink:#e6e6ea; --muted:#a9abb3; --gold:#c3985a; --bad:#e5534b; --okay:#3fb950; }
@@ -54,7 +54,7 @@
 
   <!-- Cache buster -->
   <script>
-    const APP_VERSION = "2025-09-18-v5";
+    const APP_VERSION = "2025-09-18-v7";
     try {
       const KEY = "ILLUME_APP_VERSION";
       if (localStorage.getItem(KEY) !== APP_VERSION) {
@@ -68,7 +68,6 @@
 </head>
 
 <body>
-  <!-- the only header on the page -->
   <header class="site-head">
     <img src="illume-logo.png" alt="Illume" class="brand-logo">
     <h1 class="page-title">Illume Feedback Survey</h1>
@@ -96,17 +95,17 @@
 
         <div>
           <label for="role">Which best describes you? <span class="req">*</span></label>
-         <select id="role" required>
-  <option value="">Select...</option>
-  <option value="Magazine Advertiser">Magazine Advertiser</option>
-  <option value="Magazine Subscriber">Magazine Subscriber</option>
-  <option value="Event Attendee">Event Attendee</option>
-  <option value="Event Instructor">Event Instructor</option>
-  <option value="Event Vendor">Event Vendor</option>
-  <option value="Learn Instructor">Learn Instructor</option>
-  <option value="Learn Subscriber">Learn Subscriber</option>
-</select>
-
+          <select id="role" required>
+            <option value="">Select...</option>
+            <option value="Magazine Advertiser">Magazine Advertiser</option>
+            <option value="Magazine Subscriber">Magazine Subscriber</option>
+            <option value="Event Attendee">Event Attendee</option>
+            <option value="Event Instructor">Event Instructor</option>
+            <option value="Event Vendor">Event Vendor</option>
+            <option value="Learn Instructor">Learn Instructor</option>
+            <option value="Learn Subscriber">Learn Subscriber</option>
+          </select>
+        </div>
 
         <div id="formFields" class="row"></div>
 
@@ -132,7 +131,7 @@
     <div class="modal">
       <h2>Thanks, your response has been submitted</h2>
       <div id="confirmBody"></div>
-      <p class="muted">Thank you! Your response has been recorded you may close this window.</p>
+      <p class="muted">Thank you. You can close this window.</p>
       <div style="display:flex; gap:8px; margin-top:10px;">
         <button id="closeModal">Close</button>
         <button class="secondary" id="downloadCsvQuick">Download CSV</button>
@@ -141,24 +140,25 @@
   </div>
 
   <script>
+/* ============== Tiny helpers ============== */
+const $ = sel => document.querySelector(sel);
+function toast(msg){ alert(msg); }
+
 /* ============== Admin Mode ============== */
 const ADMIN_PASSPHRASE = "sunset-saddle";
 const ADMIN_FLAG_KEY = "illume_admin_mode";
 
 function setAdminMode(on){
   localStorage.setItem(ADMIN_FLAG_KEY, on ? "1" : "0");
-  document.getElementById("adminControls").classList.toggle("hide", !on);
-  document.getElementById("adminHint").classList.toggle("hide", !on);
+  $("#adminControls").classList.toggle("hide", !on);
+  $("#adminHint").classList.toggle("hide", !on);
 }
 document.addEventListener("keydown", (e)=>{
   if(e.key.toLowerCase() === "a" && e.shiftKey){
     const input = prompt("Enter admin passphrase:");
     if(input && input.trim() === ADMIN_PASSPHRASE){
-      setAdminMode(true);
-      alert("Admin mode enabled");
-    } else if(input != null) {
-      alert("Incorrect passphrase");
-    }
+      setAdminMode(true); alert("Admin mode enabled");
+    } else if(input != null) { alert("Incorrect passphrase"); }
   }
 });
 (function(){
@@ -167,26 +167,12 @@ document.addEventListener("keydown", (e)=>{
   else setAdminMode(localStorage.getItem(ADMIN_FLAG_KEY) === "1");
 })();
 document.addEventListener("DOMContentLoaded", ()=>{
-  const btn = document.getElementById("adminSignOut");
-  if(btn){
-    btn.addEventListener("click", ()=>{
-      localStorage.removeItem(ADMIN_FLAG_KEY);
-      document.getElementById("adminControls").classList.add("hide");
-      document.getElementById("adminHint").classList.add("hide");
-      alert("Admin mode disabled");
-    });
-  }
-});
-    document.addEventListener("DOMContentLoaded", () => {
-  const resetBtn = document.getElementById("resetLockBtn");
-  if (resetBtn) {
-    resetBtn.addEventListener("click", () => {
-      if (!confirm("Reset the 14-day submission lock on this browser?")) return;
-      clearLock();        // removes the localStorage lock
-      updateLockUI();     // re-enables the form and hides the notice
-      alert("Lock cleared");
-    });
-  }
+  $("#adminSignOut")?.addEventListener("click", ()=>{
+    localStorage.removeItem(ADMIN_FLAG_KEY);
+    $("#adminControls").classList.add("hide");
+    $("#adminHint").classList.add("hide");
+    alert("Admin mode disabled");
+  });
 });
 
 /* ============== Schema ============== */
@@ -251,74 +237,49 @@ const schema = {
     { key:"einst_reco", label:"How likely are you to recommend teaching at our events to other leather industry professionals?", type:"scale5" }
   ]
 };
-    
-// ---- One submission lock (14 days) ----
+
+/* ============== 14-day lock ============== */
 const SUBMIT_LOCK_KEY = "illume:submission_lock";
-const SUBMIT_LOCK_MS  = 14 * 24 * 60 * 60 * 1000; // 14 days
+const SUBMIT_LOCK_MS  = 14 * 24 * 60 * 60 * 1000;
 
-function readLock() {
-  try { return JSON.parse(localStorage.getItem(SUBMIT_LOCK_KEY) || "null"); }
-  catch (_) { return null; }
-}
-function isLocked() {
-  const info = readLock();
-  return !!(info && typeof info.at === "number" && (Date.now() - info.at) < SUBMIT_LOCK_MS);
-}
-function lockUntilTs() {
-  const info = readLock();
-  return info ? (info.at + SUBMIT_LOCK_MS) : null;
-}
-function setLockNow() { localStorage.setItem(SUBMIT_LOCK_KEY, JSON.stringify({ at: Date.now() })); }
-function clearLock()   { localStorage.removeItem(SUBMIT_LOCK_KEY); }
+function readLock(){ try{ return JSON.parse(localStorage.getItem(SUBMIT_LOCK_KEY) || "null"); }catch{return null;} }
+function isLocked(){ const i = readLock(); return !!(i && typeof i.at === "number" && (Date.now() - i.at) < SUBMIT_LOCK_MS); }
+function lockUntilTs(){ const i = readLock(); return i ? i.at + SUBMIT_LOCK_MS : null; }
+function setLockNow(){ localStorage.setItem(SUBMIT_LOCK_KEY, JSON.stringify({ at: Date.now() })); }
+function clearLock(){ localStorage.removeItem(SUBMIT_LOCK_KEY); }
 
-function setFormDisabled(disabled) {
-  document
-    .querySelectorAll('.wrap .card input, .wrap .card select, .wrap .card textarea, .wrap .card button#submitBtn')
-    .forEach(el => el.disabled = disabled);
-}
-
-  // limit to the survey form area so admin buttons still work
+function setFormDisabled(disabled){
   document.querySelectorAll('.wrap .card input, .wrap .card select, .wrap .card textarea, .wrap .card button#submitBtn')
     .forEach(el => el.disabled = disabled);
 }
-
-function formatUntil(ts) { try { return new Date(ts).toLocaleString(); } catch { return ""; } }
-
-function updateLockUI() {
-  const notice = document.getElementById("lockNotice");
-  if (isLocked()) {
-    notice && (
-      notice.textContent = `You already submitted. You can submit again on ${formatUntil(lockUntilTs())}.`,
-      notice.classList.remove("hide")
-    );
+function formatUntil(ts){ try{ return new Date(ts).toLocaleString(); }catch{ return ""; } }
+function updateLockUI(){
+  const notice = $("#lockNotice");
+  if (isLocked()){
+    if (notice){
+      notice.textContent = `You already submitted. You can submit again on ${formatUntil(lockUntilTs())}.`;
+      notice.classList.remove("hide");
+    }
     setFormDisabled(true);
   } else {
-    notice && notice.classList.add("hide");  // <- this line was cut off
+    notice?.classList.add("hide");
     setFormDisabled(false);
   }
 }
+document.addEventListener("DOMContentLoaded", updateLockUI);
 
-  document.addEventListener("DOMContentLoaded", updateLockUI);
+/* ============== Dynamic form wiring ============== */
+const ROLE_MAP = Object.fromEntries(Object.keys(schema).map(k => [k.toLowerCase(), k]));
+const normalizeRole = v => ROLE_MAP[(v || "").trim().toLowerCase()] || "";
 
-// --- Role normalization helpers ---
-const ROLE_MAP = Object.keys(schema).reduce((m,k)=>{ m[k.toLowerCase()] = k; return m; }, {});
-const normalizeRole = (v) => ROLE_MAP[(v || "").trim().toLowerCase()] || "";
-
-/* ============== State ============== */
-const STORAGE_KEY = "illume_feedback_responses_v5";
-const responses = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-const $ = (sel) => document.querySelector(sel);
 const roleSel = $("#role");
 const formFields = $("#formFields");
-roleSel.addEventListener("change", renderForm);
 
-/* ============== UI Builders ============== */
 function clearChildren(node){ while(node.firstChild) node.removeChild(node.firstChild); }
+
 function makeSelect(options, placeholder="Select..."){
   const s = document.createElement("select");
-  const ph = document.createElement("option");
-  ph.value = ""; ph.textContent = placeholder;
-  s.appendChild(ph);
+  const ph = document.createElement("option"); ph.value = ""; ph.textContent = placeholder; s.appendChild(ph);
   options.forEach(opt => { const o = document.createElement("option"); o.textContent = opt; s.appendChild(o); });
   return s;
 }
@@ -329,8 +290,7 @@ function makeCheckboxPills(options, other){
   options.forEach(opt => {
     const pill = document.createElement("label"); pill.className = "pill";
     const input = document.createElement("input"); input.type = "checkbox"; input.value = opt;
-    pill.appendChild(input); pill.appendChild(document.createTextNode(opt));
-    wrap.appendChild(pill);
+    pill.appendChild(input); pill.appendChild(document.createTextNode(opt)); wrap.appendChild(pill);
   });
   if(other){
     const pill = document.createElement("label"); pill.className = "pill";
@@ -347,11 +307,8 @@ function getCheckboxValues(wrap){
     const cb = l.querySelector('input[type="checkbox"]');
     if(cb && cb.checked){
       if(cb.value === "__OTHER__"){
-        const t = l.querySelector('input[type="text"]');
-        if(t && t.value.trim()) vals.push(t.value.trim());
-      } else {
-        vals.push(cb.value);
-      }
+        const t = l.querySelector('input[type="text"]'); if(t && t.value.trim()) vals.push(t.value.trim());
+      } else { vals.push(cb.value); }
     }
   });
   return vals;
@@ -365,24 +322,19 @@ function renderField(def){
   holder.appendChild(label);
   let control;
   if(def.type === "scale5") control = makeScale5();
-  else if(def.type === "single") {
+  else if(def.type === "single"){
     control = makeSelect([...(def.options||[]), ...(def.other?["Other"]:[])]);
     if(def.other){
       const otherBox = document.createElement("input");
       otherBox.type="text"; otherBox.className="inline-input hide"; otherBox.maxLength=100; otherBox.placeholder="Other (max 100 chars)";
-      control.addEventListener("change", ()=>{
-        if(control.value === "Other") otherBox.classList.remove("hide");
-        else { otherBox.value = ""; otherBox.classList.add("hide"); }
-      });
-      holder.appendChild(control);
-      holder.appendChild(otherBox);
+      control.addEventListener("change", ()=>{ if(control.value === "Other") otherBox.classList.remove("hide"); else { otherBox.value=""; otherBox.classList.add("hide"); }});
+      holder.appendChild(control); holder.appendChild(otherBox);
       control.dataset.otherInputId = Math.random().toString(36).slice(2);
       otherBox.dataset.bindTo = control.dataset.otherInputId;
       return holder;
     }
-  }
-  else if(def.type === "yesno") control = makeYesNo();
-  else if(def.type === "text") { control = document.createElement("textarea"); control.placeholder = "Type your answer"; }
+  } else if(def.type === "yesno") control = makeYesNo();
+  else if(def.type === "text"){ control = document.createElement("textarea"); control.placeholder = "Type your answer"; }
   else if(def.type === "checkbox") control = makeCheckboxPills(def.options || [], !!def.other);
   else control = document.createElement("input");
   if(control) control.dataset.type = def.type;
@@ -414,12 +366,18 @@ function evaluateVisibility(){
 }
 
 function renderForm(){
+  if (!roleSel || !formFields) return;
   clearChildren(formFields);
-  const roleKey = normalizeRole(roleSel?.value);
+  const roleKey = normalizeRole(roleSel.value);
   const defs = roleKey ? schema[roleKey] : null;
-  if(!defs) return;  // nothing to render yet
+  if(!defs){
+    const p = document.createElement("p");
+    p.className = "subtle";
+    p.textContent = roleKey ? `No fields defined for "${roleKey}".` : "Choose your customer type to continue.";
+    formFields.appendChild(p);
+    return;
+  }
   defs.forEach(def => formFields.appendChild(renderField(def)));
-  // keep visibility reactive
   formFields.removeEventListener("input", evaluateVisibility);
   formFields.removeEventListener("change", evaluateVisibility);
   formFields.addEventListener("input", evaluateVisibility);
@@ -427,26 +385,109 @@ function renderForm(){
   evaluateVisibility();
 }
 
-// attach after DOM is ready, and also render once in case a value is preselected
-document.addEventListener("DOMContentLoaded", () => {
-  roleSel?.addEventListener("change", renderForm);
-  renderForm();
+// hook up changes + render once
+roleSel?.addEventListener("change", renderForm);
+document.addEventListener("DOMContentLoaded", renderForm);
+
+/* ============== State ============== */
+const STORAGE_KEY = "illume_feedback_responses_v5";
+const responses = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+
+/* ============== Modal ============== */
+function openModal(summaryHtml){ const bd=$("#backdrop"); const body=$("#confirmBody"); body.innerHTML=summaryHtml; bd.style.display="flex"; }
+function closeModal(){ $("#backdrop").style.display = "none"; }
+$("#closeModal").addEventListener("click", closeModal);
+$("#downloadCsvQuick").addEventListener("click", ()=>{
+  const csv = toCSV(responses); if(!csv){ alert("No responses yet."); return; }
+  download(csv, "illume_responses.csv", "text/csv");
 });
 
-/* ============== Validate and Collect ============== */
+// Delegated reset lock so it always works
+document.addEventListener("click", (e)=>{
+  const btn = e.target.closest("#resetLockBtn"); if(!btn) return;
+  e.preventDefault();
+  if (!isLocked()){ toast("There is no active 14-day lock right now."); return; }
+  if (!confirm("Reset the 14-day submission lock on this browser?")) return;
+  clearLock(); updateLockUI(); toast("14-day lock has been cleared. This browser can submit again.");
+});
+
+/* ============== Google Sheets Hook ============== */
+const SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxf1JGJVQpDMKkTEFpO4f8ecjuiMs2pKYRAiFrbzquZP2MGIa6yB3_q9iiIXaxnG88D/exec";
+window.addEventListener("load", () => {
+  fetch(SHEETS_ENDPOINT + "?v=" + Date.now(), { method: "GET", cache: "no-store" }).catch(()=>{});
+});
+async function postToSheets(row){
+  const url = SHEETS_ENDPOINT + "?v=" + Date.now();
+  const ctrl = new AbortController(); const to = setTimeout(()=>ctrl.abort(), 12000);
+  const opts = { method:"POST", headers:{ "Content-Type":"text/plain;charset=utf-8" }, body:JSON.stringify(row), cache:"no-store", signal:ctrl.signal };
+  async function once(){ const res = await fetch(url, opts); if(!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`); return res.json(); }
+  try { const data = await once(); clearTimeout(to); return typeof data==="object" ? data : { ok:false, error:"Non-JSON response" }; }
+  catch(e){ await new Promise(r=>setTimeout(r,600)); try{ const d = await once(); clearTimeout(to); return d; }
+  catch(e2){ clearTimeout(to); const msg = e2 && e2.name==="AbortError" ? "Request timed out" : String(e2 && e2.message || e2); return { ok:false, error:msg }; } }
+}
+
+/* ============== Export helpers ============== */
+function toCSV(rows){
+  if(rows.length===0) return "";
+  const cols = Array.from(rows.reduce((set,row)=>{ Object.keys(row).forEach(k=>set.add(k)); return set; }, new Set()));
+  const esc = v => { const s = String(v==null ? "" : v); return /[\",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s; };
+  const header = cols.map(esc).join(","), body = rows.map(r => cols.map(c => esc(r[c]||"")).join(",")).join("\n");
+  return header + "\n" + body;
+}
+function normalizedJSON(rows){
+  const byRole = {};
+  for(const r of rows){ const role = r.role || "Unknown"; if(!byRole[role]) byRole[role] = [];
+    const sorted = Object.keys(r).sort().reduce((o,k)=>{ o[k]=r[k]; return o; }, {}); byRole[role].push(sorted); }
+  const totals = Object.fromEntries(Object.entries(byRole).map(([k,v])=>[k,v.length]));
+  return { exported_at:new Date().toISOString(), total:rows.length, totals_by_role:totals, by_role:byRole };
+}
+function download(data, filename, type){ const blob=new Blob([data],{type}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=filename; a.click(); URL.revokeObjectURL(url); }
+
+/* ============== Submit Handler ============== */
+document.getElementById("submitBtn").addEventListener("click", async ()=>{
+  if (isLocked()){ updateLockUI(); alert("Thanks. You already submitted. Try again after the cooldown."); return; }
+
+  const row = validateAndCollect(); if(!row) return;
+
+  responses.push(row);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(responses));
+
+  const result = await postToSheets(row);
+
+  setLockNow();
+  updateLockUI();
+
+  const who = [row.first_name, row.last_name].filter(Boolean).join(" ");
+  const statusLine = result.ok ? "Saved to Sheets" : "Saved locally only";
+  const extra = result.ok ? `<br><strong>Sheets time:</strong> ${result.stored_at || ""}` : `<br><strong>Warning:</strong> ${result.error || "Offline or blocked"}`;
+
+  const summary = `<p><strong>Submitted</strong> at ${new Date(row._ts).toLocaleString()}`
+    + `<br><strong>Customer type:</strong> ${row.role}`
+    + `${who ? "<br><strong>Name:</strong> " + who : ""}`
+    + `${row.email ? "<br><strong>Email:</strong> " + row.email : ""}`
+    + `<br><strong>Cooldown ends:</strong> ${formatUntil(lockUntilTs())}`
+    + `<br><strong>Status:</strong> ${statusLine}${extra}</p>`;
+  openModal(summary);
+
+  formFields.querySelectorAll("select").forEach(s=>s.value="");
+  formFields.querySelectorAll("textarea").forEach(t=>t.value="");
+  formFields.querySelectorAll(".choices input[type=checkbox]").forEach(c=>c.checked=false);
+  formFields.querySelectorAll(".inline-input").forEach(t=>{ t.value=""; t.classList.add("hide"); });
+});
+
+/* ============== Build + validate ============== */
 function validateAndCollect(){
   const role = roleSel.value;
   if(!role){ alert("Please choose your customer type first."); return null; }
 
   const out = { _ts:new Date().toISOString(), role };
-  out.first_name = (document.getElementById("firstName").value || "").trim();
-  out.last_name  = (document.getElementById("lastName").value || "").trim();
-  out.email      = (document.getElementById("email").value || "").trim();
+  out.first_name = ($("#firstName").value || "").trim();
+  out.last_name  = ($("#lastName").value || "").trim();
+  out.email      = ($("#email").value || "").trim();
 
   let ok = true, problems = [];
   formFields.querySelectorAll("[data-key]").forEach(block => {
-    const hidden = block.classList.contains("hide");
-    if(hidden) return;
+    const hidden = block.classList.contains("hide"); if(hidden) return;
     const key = block.dataset.key;
     const required = block.dataset.required !== "false";
     const select = block.querySelector("select");
@@ -458,224 +499,17 @@ function validateAndCollect(){
       value = select.value.trim();
       if(select.dataset.otherInputId){
         const match = formFields.querySelector(`input.inline-input[data-bind-to="${select.dataset.otherInputId}"]`);
-        if(select.value === "Other"){
-          const v = match.value.trim();
-          if(v.length === 0) { ok = false; problems.push(block); }
-          value = v;
-        }
+        if(select.value === "Other"){ const v = match.value.trim(); if(v.length===0){ ok=false; problems.push(block); } value = v; }
       }
     } else if(area){ value = area.value.trim(); }
-    else if(choices){
-      const vals = getCheckboxValues(choices);
-      value = vals.join("; ");
-      if(required && vals.length === 0) { ok = false; problems.push(block); }
-    }
-    if(required && !choices && !value){ ok = false; problems.push(block); }
+    else if(choices){ const vals = getCheckboxValues(choices); value = vals.join("; "); if(required && vals.length===0){ ok=false; problems.push(block); } }
+    if(required && !choices && !value){ ok=false; problems.push(block); }
     out[key] = value;
   });
 
-  if(!ok){
-    problems[0]?.scrollIntoView({ behavior:"smooth", block:"center" });
-    alert("Please complete all required fields.");
-    return null;
-  }
+  if(!ok){ problems[0]?.scrollIntoView({ behavior:"smooth", block:"center" }); alert("Please complete all required fields."); return null; }
   return out;
 }
-
-/* ============== Export Helpers ============== */
-function toCSV(rows){
-  if(rows.length === 0) return "";
-  const cols = Array.from(rows.reduce((set,row)=>{ Object.keys(row).forEach(k=>set.add(k)); return set; }, new Set()));
-  const esc = v => {
-    const s = String(v==null ? "" : v);
-    if(/[\",\n]/.test(s)) return '"' + s.replace(/"/g,'""') + '"';
-    return s;
-  };
-  const header = cols.map(esc).join(",");
-  const body = rows.map(r => cols.map(c => esc(r[c]||"")).join(",")).join("\n");
-  return header + "\n" + body;
-}
-function normalizedJSON(rows){
-  const byRole = {};
-  for(const r of rows){
-    const role = r.role || "Unknown";
-    if(!byRole[role]) byRole[role] = [];
-    const sorted = Object.keys(r).sort().reduce((o,k)=>{ o[k]=r[k]; return o; }, {});
-    byRole[role].push(sorted);
-  }
-  const totals = Object.fromEntries(Object.entries(byRole).map(([k,v])=>[k,v.length]));
-  return { exported_at:new Date().toISOString(), total:rows.length, totals_by_role:totals, by_role:byRole };
-}
-function download(data, filename, type){
-  const blob = new Blob([data], {type});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = filename; a.click();
-  URL.revokeObjectURL(url);
-}
-
-/* ============== Modal ============== */
-function openModal(summaryHtml){
-  const bd = document.getElementById("backdrop");
-  const body = document.getElementById("confirmBody");
-  body.innerHTML = summaryHtml;
-  bd.style.display = "flex";
-}
-function closeModal(){ document.getElementById("backdrop").style.display = "none"; }
-document.getElementById("closeModal").addEventListener("click", closeModal);
-document.getElementById("downloadCsvQuick").addEventListener("click", ()=>{
-  const csv = toCSV(responses);
-  if(!csv){ alert("No responses yet."); return; }
-  download(csv, "illume_responses.csv", "text/csv");
-});
-    
-// Delegated handler so it always fires even if the DOM changes
-document.addEventListener("click", (e) => {
-  const btn = e.target.closest("#resetLockBtn");
-  if (!btn) return;
-
-  e.preventDefault();
-
-  // If already unlocked, tell the admin and bail
-  if (!isLocked()) {
-    toast("There is no active 14-day lock right now.");
-    return;
-  }
-
-  if (!confirm("Reset the 14-day submission lock on this browser?")) return;
-
-  clearLock();        // remove from localStorage
-  updateLockUI();     // re-enable controls + hide notice
-  toast("14-day lock has been cleared. This browser can submit again.");
-});
-
-/* ============== Google Sheets Hook ============== */
-const SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxf1JGJVQpDMKkTEFpO4f8ecjuiMs2pKYRAiFrbzquZP2MGIa6yB3_q9iiIXaxnG88D/exec";
-// Warm up Apps Script once the page loads
-window.addEventListener("load", () => {
-  fetch(SHEETS_ENDPOINT + "?v=" + Date.now(), { method: "GET", cache: "no-store" }).catch(()=>{});
-});
-
-async function postToSheets(row) {
-  const url = SHEETS_ENDPOINT + "?v=" + Date.now();
-  const ctrl = new AbortController();
-  const to = setTimeout(() => ctrl.abort(), 12000);
-
-  const opts = {
-    method: "POST",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify(row),
-    cache: "no-store",
-    signal: ctrl.signal
-  };
-
-  async function tryOnce() {
-    const res = await fetch(url, opts);
-    if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-    return res.json();
-  }
-
-  try {
-    const data = await tryOnce();
-    clearTimeout(to);
-    return typeof data === "object" ? data : { ok:false, error:"Non-JSON response" };
-  } catch (e) {
-    await new Promise(r => setTimeout(r, 600));
-    try {
-      const data = await tryOnce();
-      clearTimeout(to);
-      return data;
-    } catch (e2) {
-      clearTimeout(to);
-      const msg = e2 && e2.name === "AbortError" ? "Request timed out" : String(e2 && e2.message || e2);
-      return { ok:false, error: msg };
-    }
-  }
-}
-
-/* ============== Submit Handler ============== */
-document.getElementById("submitBtn").addEventListener("click", async ()=>{
-  // 1) block if locked
-  if (isLocked()) { 
-    updateLockUI();
-    alert("Thanks! You already submitted. Try again after the cooldown.");
-    return;
-  }
-
-  // 2) collect
-  const row = validateAndCollect(); 
-  if (!row) return;
-
-  // 3) save locally
-  responses.push(row);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(responses));
-
-  // 4) send to Sheets
-  const result = await postToSheets(row);
-
-  // 5) NOW set the 14 day lock and refresh the UI
-  setLockNow();
-  updateLockUI();
-
-  // 6) build summary and show modal
-  const who = [row.first_name, row.last_name].filter(Boolean).join(" ");
-  const statusLine = result.ok ? "Saved to Sheets" : "Saved locally only";
-  const extra = result.ok
-    ? `<br><strong>Sheets time:</strong> ${result.stored_at || ""}`
-    : `<br><strong>Warning:</strong> ${result.error || "Offline or blocked"}`;
-
-  const summary = `<p><strong>Submitted</strong> at ${new Date(row._ts).toLocaleString()}`
-    + `<br><strong>Customer type:</strong> ${row.role}`
-    + `${who ? "<br><strong>Name:</strong> " + who : ""}`
-    + `${row.email ? "<br><strong>Email:</strong> " + row.email : ""}`
-    + `<br><strong>Cooldown ends:</strong> ${formatUntil(lockUntilTs())}`
-    + `<br><strong>Status:</strong> ${statusLine}${extra}</p>`;
-  openModal(summary);
-
-  // 7) clear inputs for good measure
-  formFields.querySelectorAll("select").forEach(s=>s.value="");
-  formFields.querySelectorAll("textarea").forEach(t=>t.value="");
-  formFields.querySelectorAll(".choices input[type=checkbox]").forEach(c=>c.checked=false);
-  formFields.querySelectorAll(".inline-input").forEach(t=>{ t.value=""; t.classList.add("hide"); });
-});
-
-
-/* ============== Admin buttons ============== */
-document.getElementById("exportCsvBtn").addEventListener("click", ()=>{
-  const csv = toCSV(responses);
-  if(!csv){ alert("No responses yet."); return; }
-  download(csv, "illume_responses.csv", "text/csv");
-});
-document.getElementById("exportJsonBtn").addEventListener("click", ()=>{
-  const obj = normalizedJSON(responses);
-  download(JSON.stringify(obj, null, 2), "illume_responses.json", "application/json");
-});
-document.getElementById("importJsonBtn").addEventListener("click", ()=>{
-  const inp = document.createElement("input"); inp.type="file"; inp.accept="application/json";
-  inp.onchange = (e)=>{
-    const file = e.target.files[0]; if(!file) return;
-    const reader = new FileReader();
-    reader.onload = ()=>{
-      try {
-        const data = JSON.parse(reader.result);
-        const rows = Array.isArray(data) ? data : (data.by_role ? Object.values(data.by_role).flat() : []);
-        if(!rows || rows.length === 0) throw new Error("No rows found in JSON");
-        responses.length = 0; rows.forEach(r=>responses.push(r));
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(responses));
-        alert("Imported");
-      } catch(err){ alert("Import failed: " + err.message); }
-    };
-    reader.readAsText(file);
-  };
-  inp.click();
-});
-document.getElementById("clearBtn").addEventListener("click", ()=>{
-  if(confirm("Remove all locally stored responses?")) {
-    localStorage.removeItem(STORAGE_KEY);
-    alert("Cleared");
-    location.reload();
-  }
-});
   </script>
 </body>
 </html>
