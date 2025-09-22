@@ -54,7 +54,7 @@
 
   <!-- Cache buster -->
   <script>
-    const APP_VERSION = "2025-09-18-v6a";
+    const APP_VERSION = "2025-09-18-v7";
     try {
       const KEY = "ILLUME_APP_VERSION";
       if (localStorage.getItem(KEY) !== APP_VERSION) {
@@ -464,7 +464,7 @@ document.getElementById("submitBtn").addEventListener("click", async ()=>{
   updateLockUI();
 
   const who = [row.first_name, row.last_name].filter(Boolean).join(" ");
-  const statusLine = result.ok ? "Saved to Sheets" : "Saved locally only";
+  const statusLine = result.ok ? "Response Submitted" : "Saved locally only";
   const extra = result.ok ? `<br><strong>Sheets time:</strong> ${result.stored_at || ""}` : `<br><strong>Warning:</strong> ${result.error || "Offline or blocked"}`;
 
   const summary = `<p><strong>Submitted</strong> at ${new Date(row._ts).toLocaleString()}`
