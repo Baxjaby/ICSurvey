@@ -570,7 +570,14 @@ async function postToSheets(row) {
 }
 
 /* ============== Submit Handler ============== */
+
 document.getElementById("submitBtn").addEventListener("click", async ()=>{
+      if (isLocked()) { 
+  updateLockUI(); 
+  alert("You have already submitted. Try again later!"); 
+  return; 
+}
+  
   const row = validateAndCollect(); if(!row) return;
 
   responses.push(row);
