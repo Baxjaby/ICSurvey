@@ -96,17 +96,17 @@
 
         <div>
           <label for="role">Which best describes you? <span class="req">*</span></label>
-          <select id="role" required>
-            <option value="">Select...</option>
-            <option>Magazine Advertiser</option>
-            <option>Magazine Subscriber</option>
-            <option>Event Attendee</option>
-            <option>Event Instructor</option>
-            <option>Event Vendor</option>
-            <option>Learn Instructor</option>
-            <option>Learn Subscriber</option>
-          </select>
-        </div>
+         <select id="role" required>
+  <option value="">Select...</option>
+  <option value="Magazine Advertiser">Magazine Advertiser</option>
+  <option value="Magazine Subscriber">Magazine Subscriber</option>
+  <option value="Event Attendee">Event Attendee</option>
+  <option value="Event Instructor">Event Instructor</option>
+  <option value="Event Vendor">Event Vendor</option>
+  <option value="Learn Instructor">Learn Instructor</option>
+  <option value="Learn Subscriber">Learn Subscriber</option>
+</select>
+
 
         <div id="formFields" class="row"></div>
 
@@ -122,7 +122,7 @@
             <button class="secondary" id="adminSignOut">Exit Admin</button>
           </span>
         </div>
-        <div class="subtle">Responses save in this browser. Export before clearing cache or switching devices.</div>
+        <div class="subtle">Your submission will be sent to us!</div>
         <div id="adminHint" class="admin-note hide">Admin mode enabled.</div>
       </div>
     </div>
@@ -310,6 +310,7 @@ const responses = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
 const $ = (sel) => document.querySelector(sel);
 const roleSel = $("#role");
 const formFields = $("#formFields");
+roleSel.addEventListener("change", renderForm);
 
 /* ============== UI Builders ============== */
 function clearChildren(node){ while(node.firstChild) node.removeChild(node.firstChild); }
