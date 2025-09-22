@@ -272,6 +272,11 @@ function setLockNow() { localStorage.setItem(SUBMIT_LOCK_KEY, JSON.stringify({ a
 function clearLock()   { localStorage.removeItem(SUBMIT_LOCK_KEY); }
 
 function setFormDisabled(disabled) {
+  document
+    .querySelectorAll('.wrap .card input, .wrap .card select, .wrap .card textarea, .wrap .card button#submitBtn')
+    .forEach(el => el.disabled = disabled);
+}
+
   // limit to the survey form area so admin buttons still work
   document.querySelectorAll('.wrap .card input, .wrap .card select, .wrap .card textarea, .wrap .card button#submitBtn')
     .forEach(el => el.disabled = disabled);
@@ -521,6 +526,26 @@ document.getElementById("downloadCsvQuick").addEventListener("click", ()=>{
   const csv = toCSV(responses);
   if(!csv){ alert("No responses yet."); return; }
   download(csv, "illume_responses.csv", "text/csv");
+});
+    
+// Delegated handler so it always fires even if the DOM changes
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest("#resetLockBtn");
+  if (!btn) return;
+
+  e.preventDefault();
+
+  // If already unlocked, tell the admin and bail
+  if (!isLocked()) {
+    toast("There is no active 14-day lock right now.");
+    return;
+  }
+
+  if (!confirm("Reset the 14-day submission lock on this browser?")) return;
+
+  clearLock();        // remove from localStorage
+  updateLockUI();     // re-enable controls + hide notice
+  toast("14-day lock has been cleared. This browser can submit again.");
 });
 
 /* ============== Google Sheets Hook ============== */
