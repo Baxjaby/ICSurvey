@@ -238,6 +238,9 @@ const schema = {
     { key:"einst_reco", label:"How likely are you to recommend teaching at our events to other leather industry professionals?", type:"scale5" }
   ]
 };
+// --- Role normalization helpers ---
+const ROLE_MAP = Object.keys(schema).reduce((m,k)=>{ m[k.toLowerCase()] = k; return m; }, {});
+const normalizeRole = (v) => ROLE_MAP[(v || "").trim().toLowerCase()] || "";
 
 /* ============== State ============== */
 const STORAGE_KEY = "illume_feedback_responses_v5";
@@ -349,14 +352,23 @@ function evaluateVisibility(){
 
 function renderForm(){
   clearChildren(formFields);
-  const role = roleSel.value;
-  if(!role || !schema[role]) return;
-  schema[role].forEach(def => formFields.appendChild(renderField(def)));
-  formFields.addEventListener("input", evaluateVisibility, { once:true });
+  const roleKey = normalizeRole(roleSel?.value);
+  const defs = roleKey ? schema[roleKey] : null;
+  if(!defs) return;  // nothing to render yet
+  defs.forEach(def => formFields.appendChild(renderField(def)));
+  // keep visibility reactive
+  formFields.removeEventListener("input", evaluateVisibility);
+  formFields.removeEventListener("change", evaluateVisibility);
+  formFields.addEventListener("input", evaluateVisibility);
   formFields.addEventListener("change", evaluateVisibility);
   evaluateVisibility();
 }
-roleSel.addEventListener("change", renderForm);
+
+// attach after DOM is ready, and also render once in case a value is preselected
+document.addEventListener("DOMContentLoaded", () => {
+  roleSel?.addEventListener("change", renderForm);
+  renderForm();
+});
 
 /* ============== Validate and Collect ============== */
 function validateAndCollect(){
