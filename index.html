@@ -570,21 +570,30 @@ async function postToSheets(row) {
 }
 
 /* ============== Submit Handler ============== */
-
 document.getElementById("submitBtn").addEventListener("click", async ()=>{
-      if (isLocked()) { 
-  updateLockUI(); 
-  alert("You have already submitted. Try again later!"); 
-  return; 
-}
-  
-  const row = validateAndCollect(); if(!row) return;
+  // 1) block if locked
+  if (isLocked()) { 
+    updateLockUI();
+    alert("Thanks! You already submitted. Try again after the cooldown.");
+    return;
+  }
 
+  // 2) collect
+  const row = validateAndCollect(); 
+  if (!row) return;
+
+  // 3) save locally
   responses.push(row);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(responses));
 
+  // 4) send to Sheets
   const result = await postToSheets(row);
 
+  // 5) NOW set the 14 day lock and refresh the UI
+  setLockNow();
+  updateLockUI();
+
+  // 6) build summary and show modal
   const who = [row.first_name, row.last_name].filter(Boolean).join(" ");
   const statusLine = result.ok ? "Saved to Sheets" : "Saved locally only";
   const extra = result.ok
@@ -595,14 +604,17 @@ document.getElementById("submitBtn").addEventListener("click", async ()=>{
     + `<br><strong>Customer type:</strong> ${row.role}`
     + `${who ? "<br><strong>Name:</strong> " + who : ""}`
     + `${row.email ? "<br><strong>Email:</strong> " + row.email : ""}`
+    + `<br><strong>Cooldown ends:</strong> ${formatUntil(lockUntilTs())}`
     + `<br><strong>Status:</strong> ${statusLine}${extra}</p>`;
   openModal(summary);
 
+  // 7) clear inputs for good measure
   formFields.querySelectorAll("select").forEach(s=>s.value="");
   formFields.querySelectorAll("textarea").forEach(t=>t.value="");
   formFields.querySelectorAll(".choices input[type=checkbox]").forEach(c=>c.checked=false);
   formFields.querySelectorAll(".inline-input").forEach(t=>{ t.value=""; t.classList.add("hide"); });
 });
+
 
 /* ============== Admin buttons ============== */
 document.getElementById("exportCsvBtn").addEventListener("click", ()=>{
