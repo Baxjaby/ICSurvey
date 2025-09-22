@@ -9,6 +9,7 @@
   <h1 class="page-title">Illume Feedback Survey</h1>
   <p class="subtitle">Choose your customer type to see relevant questions.</p>
 <style>
+  <header>
  /* kill the spread for the branded header */
 .site-head{
   display:flex;
@@ -26,6 +27,10 @@
   margin-bottom:6px;
   filter:drop-shadow(0 1px 2px rgba(0,0,0,.3));
 }
+@media (max-width:600px){
+  .brand-logo{ height:40px; }
+  .page-title{ font-size:24px; }
+}
 
 .page-title{ color:var(--gold); font-size:28px; margin:0; }
 .subtitle{ opacity:.8; font-size:.9rem; margin-top:2px; }
@@ -33,7 +38,6 @@
   :root { --bg:#0f1115; --card:#171a21; --ink:#e6e6ea; --muted:#a9abb3; --gold:#c3985a; --bad:#e5534b; --okay:#3fb950; }
   html,body { margin:0; padding:0; background:var(--bg); color:var(--ink); font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif; }
   .wrap { max-width:960px; margin:24px auto; padding:0 16px; }
-  header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
   h1 { font-size:28px; margin:0; color:var(--gold); letter-spacing:.3px; }
   .card { background:var(--card); border-radius:16px; padding:20px; box-shadow:0 8px 24px rgba(0,0,0,.3); }
   .row { display:grid; grid-template-columns:1fr; gap:14px; }
