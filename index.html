@@ -5,12 +5,31 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Illume Feedback Survey</title>
 <header class="site-head">
- <img src="illume-logo.png" alt="Illume" class="brand-logo">
-  <h1>Illume Feedback Survey</h1>
-    <header class="site-head">
   <img src="illume-logo.png" alt="Illume" class="brand-logo">
+  <h1 class="page-title">Illume Feedback Survey</h1>
+  <p class="subtitle">Choose your customer type to see relevant questions.</p>
 <style>
-</header>
+ /* kill the spread for the branded header */
+.site-head{
+  display:flex;
+  flex-direction:column;   /* stack logo over title */
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  margin:24px auto 12px;
+  width:min(720px,92%);
+}
+
+.brand-logo{
+  height:48px;
+  width:auto;
+  margin-bottom:6px;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.3));
+}
+
+.page-title{ color:var(--gold); font-size:28px; margin:0; }
+.subtitle{ opacity:.8; font-size:.9rem; margin-top:2px; }
+
   :root { --bg:#0f1115; --card:#171a21; --ink:#e6e6ea; --muted:#a9abb3; --gold:#c3985a; --bad:#e5534b; --okay:#3fb950; }
   html,body { margin:0; padding:0; background:var(--bg); color:var(--ink); font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif; }
   .wrap { max-width:960px; margin:24px auto; padding:0 16px; }
